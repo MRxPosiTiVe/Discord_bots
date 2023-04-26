@@ -2,23 +2,44 @@ import disnake
 import re
 import pymorphy2
 import youtube_dl
+import random
 
+from google.oauth2.credentials import Credentials
+from googletrans import Translator
 from disnake import FFmpegPCMAudio
 from disnake.ext import commands
 from youtube_dl import YoutubeDL
 
 
-bot = commands.Bot(command_prefix='>', intents=disnake.Intents.all(), test_guilds=[1045685662839488533])
+root_guilds = [1045685662839488533, 1093494405157113871]
+joined_guilds = []
+joined_guilds.extend(root_guilds)
 
+bot = commands.Bot(command_prefix='>',
+                   intents=disnake.Intents.all(),
+                   test_guilds=joined_guilds)
 
-ydl_opts = {
-    'format': 'bestaudio/best',
-    'quiet': True,
-    'no_warnings': True,
-    'source_address': '0.0.0.0',
-    'default_search': 'auto',
-    'outtmpl': './%(title)s.%(ext)s'
+ydl_opts = {'format': 'bestaudio/best',
+            'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+            'restrictfilenames': True,
+            'nocheckcertificate': True,
+            'ignoreerrors': False,
+            'quiet': True,
+            'no_warnings': True,
+            'noplaylist': True,
+            'logtostderr': False,
+            'default_search': 'auto',
+            'source_address': '0.0.0.0'  # принудительно задает IP-адрес для запросов
+            }
+
+FFMPEG_OPTIONS = {
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+    'options': '-vn'
 }
+
+# creds = Credentials.from_authorized_user_info(info={'client_secret': 'AIzaSyCdA3u2beOpafi2KgodJy3shCKrRXCTgxg'})
+# translator = Translator(service_urls=['translate.google.com'], credentials=creds)
+# 'AIzaSyCdA3u2beOpafi2KgodJy3shCKrRXCTgxg'
 
 
 @bot.event
@@ -72,6 +93,19 @@ async def on_message(message):
             await message.channel.send(f"{message.author.mention}, такого писать здесь незя, ПИДОРАС!", delete_after=10)
             await message.delete()
 
+    # # Проверяем, что сообщение не от бота и написано на словенском языке
+    # if message.author.bot or message.author == bot.user or message.channel.type != disnake.ChannelType.text:
+    #     return
+    # if translator.detect(message.content).lang != 'sl':
+    #     return
+    #
+    # # Переводим сообщение
+    # translation = translator.translate(message.content, dest='ru')
+    #
+    # # Отправляем перевод в чат
+    # await message.channel.send(f"{message.author.mention}, перевод: {translation.text}")
+
+
 last_message_time = {}
 
 
@@ -79,18 +113,17 @@ last_message_time = {}
 async def Jacek(ctx, num: int):
     for i in range(num):
         await ctx.send("Яцек пидорас!", delete_after=10)
+        await ctx.send("Шлюха Самохинская, нелюдь!", delete_after=10)
 
 
 @bot.slash_command(name="Chushka".lower(), description="Пошлет мусор кому угодно")
 async def Chushka(ctx, member: disnake.Member, send: str):
     await ctx.send(f'Чел {member.mention} -> {send}!')
-    await ctx.message.delete
 
 
 @bot.slash_command(name="Nigger".lower(), description="Скажет кому-то, что он нигер")
-async def Chushka(ctx, member: disnake.Member):
+async def nigger(ctx, member: disnake.Member):
     await ctx.send(f'Чел {member.mention} -> настоящий NIGGER!')
-    await ctx.message.delete
 
 
 @bot.slash_command(name='fap', description='Призыв + послание + определенное кол-во раз')
@@ -99,18 +132,40 @@ async def fap(ctx, member: disnake.Member, text: str, times: int):
         await ctx.send(f'{member.mention}, {text}! Иди сюда, БЛЯТЬ!')
 
 
+@bot.slash_command(name='monketest', description='Тест на примата')
+async def monkeTest(ctx, num: int):
+    lst = [random.randint(1, 100) for i in range(1, 50)]
+    if ctx.author == ctx.guild.owner or ctx.author.guild_permissions.administrator:
+        await ctx.send(f'{ctx.author.mention}, вы являетесь администратором или владельцем сервера, '
+                       f'вы точно НЕ примат!')
+    elif num > 100:
+        await ctx.send(f'{ctx.author.mention}, дЭбил, число должно быть меньше 100! Давай по новой!')
+
+    elif num in lst:
+        await ctx.send(f'{ctx.author.mention}, ты прошел тест, шанс того, что ты примат = {random.randint(31, 100)}%')
+    else:
+        await ctx.send(f'{ctx.author.mention}, ты провалил тест, но шанс того, '
+                       f'что ты примат все же есть = {random.randint(1, 30)}%')
+
+
+@bot.slash_command(description='Какая-то инфа о сервере')
+async def server(ctx):
+    await ctx.send(f'Название сервера: {ctx.guild.name}\nВсего участинков: {ctx.guild.member_count}\n'
+                   f'Уровень чего-то: {ctx.guild.verification_level}')
+
+
 @bot.slash_command(name="calculator",
                    description="Посчитает, что-то за тебя дЭбила! (x+y || x-y || x/y || x*y || y^(1/x))")
-async def culc(inter, x: int, oper: str, y: int):
-    if oper == "+":
+async def culc(inter, x: int, operation: str, y: int):
+    if operation == "+":
         result = x + y
-    elif oper == "-":
+    elif operation == "-":
         result = x - y
-    elif oper == "/":
+    elif operation == "/":
         result = x / y
-    elif oper == "*":
+    elif operation == "*":
         result = x * y
-    elif oper == "sqrt":
+    elif operation == "sqrt":
         result = y ** (1 / x)
     else:
         result = "Проеб где-то!"
@@ -119,40 +174,6 @@ async def culc(inter, x: int, oper: str, y: int):
         await inter.send(f"Ответ = {str(result)}")
     else:
         await inter.send(result)
-
-
-@bot.command()
-async def play(ctx, *, query: str):
-    vc = ctx.author.voice.channel
-    if not vc:
-        return await ctx.send("Вы должны быть в голосовом канале, чтобы использовать эту команду")
-
-    try:
-        await vc.connect()
-    except disnake.ClientException:
-        pass
-
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        try:
-            info = ydl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
-        except youtube_dl.utils.DownloadError:
-            return await ctx.send("Не удалось найти видео на YouTube")
-
-        url = info['url']
-        title = info['title']
-        length = info['duration']
-        uploader = info['uploader']
-
-    embed = disnake.Embed(
-        title=title,
-        description=f'Uploader: {uploader}\nDuration: {length}',
-        url=url,
-        color=0xff0000
-    )
-
-    player = await vc.connect()
-    player.play(disnake.FFmpegPCMAudio(url, options="-vn"))
-    await ctx.send(embed=embed)
 
 
 @bot.event
@@ -190,8 +211,14 @@ async def online(ctx):
 
 
 @bot.command()
-async def playing(ctx, game):
-    await bot.change_presence(status=disnake.Status.invisible, activity=disnake.Game(name=game))
+async def playing(ctx, game: str):
+    await bot.change_presence(activity=disnake.Game(name=game))
+    await ctx.send(f"Теперь я играю в {game}!")
 
 
-bot.run("Token")
+bot.load_extension("cogs.ping")
+bot.load_extension("cogs.Guild")
+bot.load_extension('cogs.titis')
+bot.load_extension('cogs.abtititis')
+
+bot.run("MTA5MzU2MzcxOTUxMTk4NjIyNw.Gtuqz4.f4IUfB27q1zJE0qBBwbu1ywcl_jRcL3rrrvPWg")
