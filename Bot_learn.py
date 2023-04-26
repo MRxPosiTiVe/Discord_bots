@@ -221,4 +221,5 @@ bot.load_extension("cogs.Guild")
 bot.load_extension('cogs.titis')
 bot.load_extension('cogs.abtititis')
 
-bot.run("MTA5MzU2MzcxOTUxMTk4NjIyNw.Gtuqz4.f4IUfB27q1zJE0qBBwbu1ywcl_jRcL3rrrvPWg")
+bot.run("Token")
+
